@@ -725,9 +725,8 @@
 
     /* ─── NEWS ─── */
     #news { background: var(--black-2); }
-    .behold-wrap { width: 100%; }
-    .behold-wrap behold-widget,
-    [data-behold-id] { --behold-background: transparent; --behold-gap: 12px; }
+    @media (max-width: 768px) { #news-feed { grid-template-columns: 1fr !important; } }
+    @media (max-width: 1024px) and (min-width: 769px) { #news-feed { grid-template-columns: 1fr 1fr !important; } }
     .news-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -1456,11 +1455,36 @@
       <div class="section-tag">News & Blog</div>
       <h2 class="section-title">AKTUELLES AUS DER <span class="gold-text">WELT VON FITBYMO</span></h2>
     </div>
-    <div class="reveal behold-wrap">
-      <!-- Behold.so Instagram Feed — Widget ID hier eintragen -->
-      <div data-behold-id="DEINE_BEHOLD_ID"></div>
-      <script src="https://w.behold.so/widget.js" type="module"></script>
-    </div>
+    <div id="news-feed" style="display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem;"></div>
+    <p id="news-loading" style="text-align:center;color:var(--white-60);margin-top:2rem;">Nachrichten werden geladen...</p>
+    <script>
+      (function() {
+        var RSS = 'https://www.kicker.de/news/fussball/bundesliga/spieltag/bundesliga/news.rss';
+        var API = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(RSS) + '&api_key=public&count=6';
+        fetch(API).then(function(r){return r.json();}).then(function(data){
+          var feed = document.getElementById('news-feed');
+          var loading = document.getElementById('news-loading');
+          if(!data.items || !data.items.length){ loading.textContent='Keine News verfügbar.'; return; }
+          loading.style.display='none';
+          data.items.slice(0,6).forEach(function(item){
+            var date = new Date(item.pubDate).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'});
+            var img = item.thumbnail || item.enclosure && item.enclosure.link || '';
+            var card = document.createElement('article');
+            card.className='news-card reveal';
+            card.innerHTML =
+              '<div class="news-img" style="' + (img ? 'background-image:url('+img+');background-size:cover;background-position:center;' : '') + '">' +
+              (!img ? '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="0.8" opacity="0.3"><circle cx="12" cy="7" r="4"/><path d="M5.5 20a6.5 6.5 0 0113 0"/></svg>' : '') +
+              '</div>' +
+              '<div class="news-body">' +
+              '<div class="news-tag">Bundesliga</div>' +
+              '<h3 class="news-title"><a href="'+item.link+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">'+item.title+'</a></h3>' +
+              '<div class="news-meta">'+date+'</div>' +
+              '</div>';
+            feed.appendChild(card);
+          });
+        }).catch(function(){ document.getElementById('news-loading').textContent='News konnten nicht geladen werden.'; });
+      })();
+    </script>
   </div>
 </section>
 
