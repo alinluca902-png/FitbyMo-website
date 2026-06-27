@@ -1459,30 +1459,42 @@
     <p id="news-loading" style="text-align:center;color:var(--white-60);margin-top:2rem;">Nachrichten werden geladen...</p>
     <script>
       (function() {
-        var RSS = 'https://www.kicker.de/news/fussball/bundesliga/spieltag/bundesliga/news.rss';
-        var API = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(RSS) + '&api_key=public&count=6';
-        fetch(API).then(function(r){return r.json();}).then(function(data){
-          var feed = document.getElementById('news-feed');
-          var loading = document.getElementById('news-loading');
-          if(!data.items || !data.items.length){ loading.textContent='Keine News verfügbar.'; return; }
-          loading.style.display='none';
-          data.items.slice(0,6).forEach(function(item){
-            var date = new Date(item.pubDate).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'});
-            var img = item.thumbnail || item.enclosure && item.enclosure.link || '';
-            var card = document.createElement('article');
-            card.className='news-card reveal';
-            card.innerHTML =
-              '<div class="news-img" style="' + (img ? 'background-image:url('+img+');background-size:cover;background-position:center;' : '') + '">' +
-              (!img ? '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="0.8" opacity="0.3"><circle cx="12" cy="7" r="4"/><path d="M5.5 20a6.5 6.5 0 0113 0"/></svg>' : '') +
-              '</div>' +
-              '<div class="news-body">' +
-              '<div class="news-tag">Bundesliga</div>' +
-              '<h3 class="news-title"><a href="'+item.link+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">'+item.title+'</a></h3>' +
-              '<div class="news-meta">'+date+'</div>' +
-              '</div>';
-            feed.appendChild(card);
-          });
-        }).catch(function(){ document.getElementById('news-loading').textContent='News konnten nicht geladen werden.'; });
+        var feeds = [
+          'https://feeds.bbci.co.uk/sport/football/rss.xml',
+          'https://www.goal.com/feeds/en/news',
+          'https://www.sport1.de/rss/fussball.rss'
+        ];
+        var tags = ['Fußball', 'Fußball', 'Bundesliga'];
+        function tryFeed(index) {
+          if(index >= feeds.length) {
+            document.getElementById('news-loading').textContent = 'News konnten nicht geladen werden.';
+            return;
+          }
+          var API = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feeds[index]) + '&count=6';
+          fetch(API).then(function(r){return r.json();}).then(function(data){
+            var feed = document.getElementById('news-feed');
+            var loading = document.getElementById('news-loading');
+            if(!data.items || !data.items.length){ tryFeed(index+1); return; }
+            loading.style.display='none';
+            data.items.slice(0,6).forEach(function(item){
+              var date = new Date(item.pubDate).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'});
+              var img = item.thumbnail || (item.enclosure && item.enclosure.link) || '';
+              var card = document.createElement('article');
+              card.className='news-card reveal';
+              card.innerHTML =
+                '<div class="news-img" style="' + (img ? 'background-image:url('+img+');background-size:cover;background-position:center;' : '') + '">' +
+                (!img ? '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="0.8" opacity="0.3"><circle cx="12" cy="12" r="10"/><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>' : '') +
+                '</div>' +
+                '<div class="news-body">' +
+                '<div class="news-tag">'+tags[index]+'</div>' +
+                '<h3 class="news-title"><a href="'+item.link+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">'+item.title+'</a></h3>' +
+                '<div class="news-meta">'+date+'</div>' +
+                '</div>';
+              feed.appendChild(card);
+            });
+          }).catch(function(){ tryFeed(index+1); });
+        }
+        tryFeed(0);
       })();
     </script>
   </div>
